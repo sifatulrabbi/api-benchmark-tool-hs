@@ -3,21 +3,20 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"sync"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
-const ENV_FILE_PATH = ".env"
-const TEST_DURATION = time.Second * 30
-const MAX_SLEEP_THRESHOLD = 1000
-const ACTIVE_USERS = 50
+const (
+	ENV_FILE_PATH       = ".env"
+	TEST_DURATION       = time.Second * 30
+	MAX_SLEEP_THRESHOLD = 1000
+	ACTIVE_USERS        = 50
+)
 
 type TestContext struct {
 	UserID      string
@@ -25,6 +24,7 @@ type TestContext struct {
 	UserEmail   string
 	AccountID   string
 }
+
 type TestResult struct {
 	TotalUsersHandled   int
 	TotalRequestHandled int
@@ -44,42 +44,43 @@ var results = TestResult{
 }
 
 func main() {
-	err := godotenv.Load(ENV_FILE_PATH)
-	if err != nil {
-		log.Fatalln("unable to load the .env file")
-	}
-
-	stopSig := make(chan bool, 1)
-	wg := sync.WaitGroup{}
-
-	go func() {
-		time.Sleep(TEST_DURATION)
-		stopSig <- true
-	}()
-
-	go func() {
-		for range results.UsersChan {
-			results.TotalUsersHandled += 1
-		}
-	}()
-
-	go func() {
-		for range results.RequestsChan {
-			results.TotalRequestHandled += 1
-		}
-	}()
-
-	log.Println("Test started")
-	go createActiveUsers(&wg, stopSig, ACTIVE_USERS)
-
-	<-stopSig
-	wg.Wait()
-	log.Println("Test completed")
-	fmt.Printf(
-		"Total users: %d\nTotal requests: %d\n",
-		results.TotalUsersHandled,
-		results.TotalRequestHandled,
-	)
+	basicHTTPReqs(100, http.MethodGet, "http://localhost:3050/health")
+	// err := godotenv.Load(ENV_FILE_PATH)
+	// if err != nil {
+	// 	log.Fatalln("unable to load the .env file")
+	// }
+	//
+	// stopSig := make(chan bool, 1)
+	// wg := sync.WaitGroup{}
+	//
+	// go func() {
+	// 	time.Sleep(TEST_DURATION)
+	// 	stopSig <- true
+	// }()
+	//
+	// go func() {
+	// 	for range results.UsersChan {
+	// 		results.TotalUsersHandled += 1
+	// 	}
+	// }()
+	//
+	// go func() {
+	// 	for range results.RequestsChan {
+	// 		results.TotalRequestHandled += 1
+	// 	}
+	// }()
+	//
+	// log.Println("Test started")
+	// go createActiveUsers(&wg, stopSig, ACTIVE_USERS)
+	//
+	// <-stopSig
+	// wg.Wait()
+	// log.Println("Test completed")
+	// fmt.Printf(
+	// 	"Total users: %d\nTotal requests: %d\n",
+	// 	results.TotalUsersHandled,
+	// 	results.TotalRequestHandled,
+	// )
 }
 
 func createActiveUsers(mainWg *sync.WaitGroup, stopSig chan bool, n int) {
